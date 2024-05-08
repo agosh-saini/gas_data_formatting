@@ -1,4 +1,5 @@
 from sqlite3 import connect
+from os import path, makedirs
 
 '''
 Contact: Agosh Saini (as7saini@uwaterloo.ca)
@@ -23,7 +24,15 @@ class relation_db:
         # update name if needed
         if name is not None:
             self.db_name = name
+
         print(self.db_dir + '\\' + self.db_name)
+
+        if not path.exists(self.db_dir):
+            makedirs(self.db_dir)  # Create the folder
+            print(f"Folder '{self.db_dir}' was created.")
+        else:
+            print(f"Folder '{self.db_dir}' already exists.")
+
         # create db
         connection = connect(self.db_dir + '\\' + self.db_name)
         # exit
