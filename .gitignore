@@ -152,5 +152,6 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# Exclude the 'database' folder
-/database/
+# Exclude the db and exe in 'database' folder
+/database/*.db
+/database/*.exe

@@ -94,21 +94,21 @@ class data_format:
 
         max_ppm = self.sat_ppm[self.current_analyte]
 
-        df_on = df[df['Stage'] == 'ON (Cycling)']
+        df_cycling = df[df['Stage'].isin(['ON (Cycling)', 'OFF (Cycling)'])]
 
         # Ensure there is data to work with
-        if df_on.empty or df_on['C'].isna().all() or df_on['A'].isna().all():
+        if df_cycling.empty or df_cycling['C'].isna().all() or df_cycling['A'].isna().all():
             print("No valid data to calculate ppm.")
             return None
 
-        avg_C = np.nanmean(df_on['C'])
-        avg_A = np.nanmean(df_on['A'])
+        avg_C = np.nanmean(df_cycling['C'])
+        avg_A = np.nanmean(df_cycling['A'])
 
-        if any(df_on['C'] + df_on['A']) == 0:
+        if any(df_cycling['C'] + df_cycling['A']) == 0:
             print("Division by zero encountered while calculating ppm.")
             return None
 
-        ppm = max_ppm * df_on['C'] / (df_on['C'] + df_on['A'])
+        ppm = max_ppm * df_cycling['C'] / (df_cycling['C'] + df_cycling['A'])
 
         self.ppm = ppm.values
 
