@@ -4,14 +4,16 @@
 # -----
 # This file is a class for data processing and formatting 
 
-import numpy as np
 import pandas as pd
 import gas_data_formatting as gdf
 from PyQt5.QtWidgets import QApplication, QFileDialog
-import relation_db as db
+import json_db
+
+
 
 
 if __name__ == '__main__':
+    db_json = json_db.json_db()
 
     # Create a PyQt application
     app = QApplication([])
@@ -39,6 +41,7 @@ if __name__ == '__main__':
                 
     analytes = set(["IPA", "Water", "EtOH", "Ace"])
    
+   # save all the files selected
     for filename in file_paths:
 
         data = pd.read_csv(filename)
@@ -47,8 +50,4 @@ if __name__ == '__main__':
 
         formatted_data = formatter.format()
 
-        hub = db.relation_db("formatted_data.db")
-        db_path, db_name = hub.create_db()
-        hub.create_table()
-        hub.add_to_table(formatted_data["filename"], formatted_data['Analyte'], str(formatted_data['ppm']),
-                        str(formatted_data['ON']), str(formatted_data['OFF']))
+        db_json.save_summary_as_json(formatted_data)

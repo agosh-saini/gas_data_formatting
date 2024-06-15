@@ -6,7 +6,7 @@
 
 import numpy as np
 import pandas as pd
-import relation_db as db
+import not_in_use.relation_db as db
 from os.path import basename
 
 class data_format:
@@ -62,12 +62,10 @@ class data_format:
         if data is None:
             df  = self.data 
 
-        # Using str.extract to split the 'data' column into three new columns
+        # Extract the values into new columns A, B, and C
         df[['A', 'B', 'C']] = df['Flow [A:B:C]'].str.extract(r'\[([+-]?\d*\.?\d+):([+-]?\d*\.?\d+):([+-]?\d*\.?\d+)\]')
-
         df.dropna(subset=['A', 'B', 'C'], inplace=True)
-
-        # Convert extracted strings to integers
+        
         df[['A', 'B', 'C']] = df[['A', 'B', 'C']].astype(float)
 
         self.data = df
@@ -139,9 +137,9 @@ class data_format:
         self.final_data = {
             'filename': filename,
             'Analyte': self.current_analyte,
-            'ppm': self.ppm,
-            'ON': on_data["Current (uA)"].values,
-            'OFF': off_data["Current (uA)"].values
+            'ppm': self.ppm.astype(float),
+            'ON': on_data["Current (uA)"].values.astype(float),
+            'OFF': off_data["Current (uA)"].values.astype(float)
         }
 
         return self.final_data
@@ -154,32 +152,6 @@ class data_format:
         self.format_data()
 
         return self.final_data
-
-
-
-# Test
-if __name__ == '__main__':
-    sat_ppm = {
-                    "Water": 28483,
-                    "EtOH":	70825,
-                    "Ace":	282973,
-                    "IPA": 	52302
-                }
-                
-    analytes = set(["IPA", "Water", "EtOH", "Ace"])
-    filepath = "20240409_ASS_Water_SnO2_2D_90sccm_2.txt"
-    data = pd.read_csv(filepath)
-
-    formatter = data_format(filepath, data, analytes, sat_ppm)
-
-
-    formatted_data = formatter.format()
-
-    hub = db.relation_db("formatted_data.db")
-    db_path, db_name = hub.create_db()
-    hub.create_table()
-    hub.add_to_table(formatted_data["filename"], formatted_data['Analyte'], str(formatted_data['ppm']),
-                    str(formatted_data['ON']), str(formatted_data['OFF']))
 
 
 
