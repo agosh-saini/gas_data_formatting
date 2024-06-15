@@ -42,5 +42,5 @@ This project is licensed under the MIT License. If used in your project, please 
 
 ### Contact And Website
 Name: Agosh Saini\
-Email: {[contact@agoshsaini.com](mailto:contact@agoshsaini.com)}\
-Website: {[agoshsaini.com](https://agoshsaini.com/)}
+Email: [contact@agoshsaini.com](mailto:contact@agoshsaini.com)\
+Website: [agoshsaini.com](https://agoshsaini.com/)
