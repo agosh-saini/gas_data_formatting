@@ -25,9 +25,22 @@ Download required packages:
 
 ```bash
 pip install -r requirements.txt 
-
+```
 Clone the repository:
 
 ```bash
 git clone https://github.com/agosh-saini/gas_data_formatting.git
 cd gas_data_formatting
+```
+## Additional Information
+
+### Contributing
+Contributions are welcome! Please fork the repository and create a pull request.
+
+### License
+This project is licensed under the MIT License. If used in your project, please cite to this repository
+
+### Contact And Website
+Name: Agosh Saini\
+Email: {[contact@agoshsaini.com](mailto:contact@agoshsaini.com)}\
+Website: {[agoshsaini.com](https://agoshsaini.com/)}
