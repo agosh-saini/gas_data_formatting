@@ -40,13 +40,15 @@ if __name__ == '__main__':
             }
                 
     analytes = set(["IPA", "Water", "EtOH", "Ace"])
+
+    materials = set(["SnO2"])
    
    # save all the files selected
     for filename in file_paths:
 
         data = pd.read_csv(filename)
 
-        formatter = gdf.data_format(filename, data, analytes, sat_ppm)
+        formatter = gdf.data_format(filename, data, analytes, materials, sat_ppm)
 
         formatted_data = formatter.format()
 

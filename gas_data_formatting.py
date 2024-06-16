@@ -6,21 +6,22 @@
 
 import numpy as np
 import pandas as pd
-import not_in_use.relation_db as db
 from os.path import basename
 
 class data_format:
-    def __init__(self, filepath, data, analytes, sat_ppm):
+    def __init__(self, filepath, data, analytes, materials, sat_ppm) -> None:
         self.filepath = filepath
         self.data = data # should be pandas df
         self.analytes = analytes # should be a set
+        self.materials = materials # should be a set
         self.label = ["ON (Cycling)", "OFF (Cycling)"]
         self.sat_ppm = sat_ppm # should be a dictionary
         self.final_data = None
         self.ppm = None
         self.current_analyte = None
+        self.current_material = None
     
-    def update_value(self, filepath=None, data=None, analytes=None, sat_ppm=None):
+    def update_value(self, filepath=None, data=None, analytes=None, sat_ppm=None) -> None:
         # this function allows you to update the dataset without creating a new instance
         if filepath is not None:
             self.filepath = filepath
@@ -34,7 +35,7 @@ class data_format:
         if sat_ppm is not None:
             self.sat_ppm = sat_ppm           
        
-        return None
+        
     
     def extract_analyte(self, filepath=None, analytes=None):
         # this function allows for extraction of analyte 
@@ -55,7 +56,7 @@ class data_format:
                 self.current_analyte = analyte
                 return analyte  
         
-        return None
+        
     
     def split_flows(self, data=None):
 
@@ -85,6 +86,27 @@ class data_format:
         self.data = filtered_df[['Stage', 'Current (uA)', 'Time (s)', 'A', 'B', 'C']]
 
         return self.data
+    
+    def extract_material(self, filepath=None, materials=None):
+        # this function allows for extraction of material from filepath 
+
+        if filepath is None:
+            filepath = self.filepath
+
+        if materials is None:
+            materials = self.materials
+    
+        # check to see if values are valid for gasses
+        if not any(material in filepath for material in materials):
+            raise ValueError("None of the analytes are found in the filepath.")
+
+        # extract the analyte in question
+        for material in materials:
+            if material in filepath:
+                self.current_material = material
+                return material  
+        
+        
 
     def calcualte_ppm(self, df=None, columns=None):
         if df is None:
@@ -110,7 +132,7 @@ class data_format:
 
         self.ppm = ppm.values
 
-        return ppm
+        return ppm.values
 
     def extend_df_with_nans(dataframe, target_length):
         additional_rows = target_length - len(dataframe)
@@ -137,6 +159,7 @@ class data_format:
         self.final_data = {
             'filename': filename,
             'Analyte': self.current_analyte,
+            'Material': self.current_material,
             'ppm': self.ppm.astype(float),
             'ON': on_data["Current (uA)"].values.astype(float),
             'OFF': off_data["Current (uA)"].values.astype(float)
@@ -146,6 +169,7 @@ class data_format:
 
     def format(self):
         self.extract_analyte()
+        self.extract_material()
         self.split_flows()
         self.extract_labeled_data()
         self.calcualte_ppm()
