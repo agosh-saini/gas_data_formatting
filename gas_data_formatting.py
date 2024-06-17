@@ -40,10 +40,10 @@ class data_format:
     def extract_analyte(self, filepath=None, analytes=None):
         # this function allows for extraction of analyte 
 
-        if filepath is None:
+        if filepath is None: 
             filepath = self.filepath
 
-        if analytes is None:
+        if analytes is None: 
             analytes = self.analytes
     
         # check to see if values are valid for gasses
@@ -66,8 +66,9 @@ class data_format:
         # Extract the values into new columns A, B, and C
         df[['A', 'B', 'C']] = df['Flow [A:B:C]'].str.extract(r'\[([+-]?\d*\.?\d+):([+-]?\d*\.?\d+):([+-]?\d*\.?\d+)\]')
         df.dropna(subset=['A', 'B', 'C'], inplace=True)
+
         
-        df[['A', 'B', 'C']] = df[['A', 'B', 'C']].astype(float)
+        df[['A', 'B', 'C']] = df[['A', 'B', 'C']].astype(float).clip(lower=0)
 
         self.data = df
 
@@ -155,14 +156,30 @@ class data_format:
 
         filename = basename(self.filepath) 
 
+        if len(self.ppm.astype(float)) <= 0:
+            ppm = np.array([0])
+        else:
+            ppm = self.ppm.astype(float)
+
+        if len(on_data["Current (uA)"].values.astype(float)) <= 0:
+            on = np.array([0])
+        else:
+            on = on_data["Current (uA)"].values.astype(float)
+
+        if len(off_data["Current (uA)"].values.astype(float)) <= 0:
+            off = np.array([0])
+        else:
+            off = off_data["Current (uA)"].values.astype(float)
+
+
         # Create a DataFrame with repeating scalar values to match the length of on_data
         self.final_data = {
             'filename': filename,
             'Analyte': self.current_analyte,
             'Material': self.current_material,
-            'ppm': self.ppm.astype(float),
-            'ON': on_data["Current (uA)"].values.astype(float),
-            'OFF': off_data["Current (uA)"].values.astype(float)
+            'ppm': ppm,
+            'ON': on,
+            'OFF': off
         }
 
         return self.final_data

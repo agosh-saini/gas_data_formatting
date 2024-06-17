@@ -8,12 +8,13 @@ import pandas as pd
 import gas_data_formatting as gdf
 from PyQt5.QtWidgets import QApplication, QFileDialog
 import json_db
-
-
+import fe_catch_22
+import os
 
 
 if __name__ == '__main__':
     db_json = json_db.json_db()
+    fe = fe_catch_22.fe_catch_22()
 
     # Create a PyQt application
     app = QApplication([])
@@ -28,7 +29,7 @@ if __name__ == '__main__':
 
 
     # Print the list of selected file paths
-    print("Selected file paths:")
+    #print("Selected file paths:")
     for filename in file_paths:
         print(filename)
 
@@ -52,4 +53,18 @@ if __name__ == '__main__':
 
         formatted_data = formatter.format()
 
-        db_json.save_summary_as_json(formatted_data)
+        key, values = fe.extract_data(data=formatted_data)
+
+        extracted_features = dict(zip(key, values))
+        
+        formatted_data.update(extracted_features)
+
+        saved = db_json.save_summary_as_json(formatted_data)
+
+        if os.path.isfile(saved):
+            print(f'Completed processing of {filename}')
+        else:
+            raise Exception(f'Unable to process {filename}')
+
+
+        

@@ -17,7 +17,7 @@ class json_db:
         self.directory =  directory
         pass
     
-    def save_summary_as_json(self, data_dict, directory=None):
+    def save_summary_as_json(self, data_dict, directory=None) -> bool:
         if directory is None: directory = self.directory
 
         # Ensure the directory exists
@@ -35,4 +35,5 @@ class json_db:
         # Save the data dictionary as a JSON file
         with open(json_filename, 'w') as json_file:
             json.dump(data_dict, json_file, indent=4)
-
+        
+        return json_filename
