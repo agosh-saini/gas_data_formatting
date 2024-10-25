@@ -5,66 +5,61 @@
 # This file is a class for data processing and formatting 
 
 import pandas as pd
-import gas_data_formatting as gdf
-from PyQt5.QtWidgets import QApplication, QFileDialog
+import gas_data_formatting 
+import split_relay_data
 import json_db
-import fe_catch_22
 import os
-
 
 if __name__ == '__main__':
     db_json = json_db.json_db()
-    fe = fe_catch_22.fe_catch_22()
+    
+    def main():
+        input_file = input('Enter the path to the input file containing relay data: ')
 
-    # Create a PyQt application
-    app = QApplication([])
+        data = pd.read_csv(input_file)
 
-    # Open a file dialog window for selecting multiple files
-    file_dialog = QFileDialog()
-    file_dialog.setFileMode(QFileDialog.ExistingFiles)
-    file_dialog.setNameFilter("All files (*.*)")
-    file_paths = []
-    if file_dialog.exec_():
-        file_paths = file_dialog.selectedFiles()
+        file_name = os.path.splitext(os.path.basename(input_file))[0]
 
+        output_folder = os.curdir + '/relay_data'
+        json_folder = os.curdir + '/json_folder'
+        
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+        
+        if not os.path.exists(json_folder):
+            os.makedirs(json_folder)
 
-    # Print the list of selected file paths
-    #print("Selected file paths:")
-    for filename in file_paths:
-        print(filename)
-
-    sat_ppm = {
-                "Water": 28483,
-                "EtOH":	70825,
-                "Ace":	282973,
-                "IPA": 	52302
+        sat_ppm = {
+                "data": 28483
             }
                 
-    analytes = set(["IPA", "Water", "EtOH", "Ace"])
+        analytes = set(["data", "Water", "EtOH", "Ace"])
 
-    materials = set(["SnO2"])
-   
-   # save all the files selected
-    for filename in file_paths:
-
-        data = pd.read_csv(filename)
-
-        formatter = gdf.data_format(filename, data, analytes, materials, sat_ppm)
-
-        formatted_data = formatter.format()
-
-        key, values = fe.extract_data(data=formatted_data)
-
-        extracted_features = dict(zip(key, values))
+        materials = set(["log"])
         
-        formatted_data.update(extracted_features)
+        # Split relay data into multiple files
+        spliter = split_relay_data.SplitRelayData(file_name, data)
+        spliter.generate_files()
 
-        saved = db_json.save_summary_as_json(formatted_data)
+        # Process and format the relay data
+        for file in os.listdir(output_folder):
 
-        if os.path.isfile(saved):
-            print(f'Completed processing of {filename}')
-        else:
-            raise Exception(f'Unable to process {filename}')
+            # Skip the file if it is not a CSV file
+            filepath = os.path.join(output_folder, file)
+            data = pd.read_csv(filepath)
+            
+            # Skip the file if it is not a CSV file
+            if not filepath.endswith('.csv'):
+                continue
 
+            # Format the data
+            formatter = gas_data_formatting.data_format(filepath, data, analytes, materials, sat_ppm)
+            formatted_data = formatter.format()
 
-        
+            # Save the formatted data as a JSON file
+            json_file = db_json.save_summary_as_json(formatted_data, json_folder)
+
+            print(f'{file_name} JSON file saved at: {json_file}')
+           
+
+    main()
