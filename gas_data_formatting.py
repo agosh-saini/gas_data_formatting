@@ -17,6 +17,7 @@ class data_format:
         self.materials = materials # should be a set
         self.label = ["Pre", "On", "Off"]
         self.sat_ppm = sat_ppm # should be a dictionary
+        self.avg_timestep = None
         self.final_data = None
         self.ppm = None
         self.current_analyte = None
@@ -37,7 +38,18 @@ class data_format:
         if sat_ppm is not None:
             self.sat_ppm = sat_ppm           
         
-    
+    def extract_avg_timestep(self, data=None):
+        # this function extracts the average timestep from the data
+        if data is None:
+            data = self.data
+
+        # Extracting the average timestep from the data
+        time = data['Time'].values
+        time_diff = np.diff(time)
+        self.avg_timestep = np.mean(time_diff)
+
+        return self.avg_timestep
+
     def extract_analyte(self, filepath=None, analytes=None):
         # this function allows for extraction of analyte 
 
@@ -136,6 +148,7 @@ class data_format:
             'Analyte': self.current_analyte,
             'Material': self.current_material,
             'ppm': self.ppm,
+            'timestep': self.avg_timestep,
             'ON': on,
             'OFF': off,
             'Baseline': baseline
@@ -145,6 +158,7 @@ class data_format:
 
     def format(self):
         self.extract_analyte()
+        self.extract_avg_timestep()
         self.extract_material()
         self.extract_labeled_data()
         self.extract_ppm()
@@ -162,7 +176,7 @@ if __name__ == "__main__":
 
     materials = set(["log"])
 
-    filepath = "data_log_20241018_133756_PN1.1_25ppm.csv"
+    filepath = "example_data\data_log_20241018_133756_25ppm.csv"
     data = pd.read_csv(filepath)
 
     formatter = data_format(filepath, data, analytes, materials, sat_ppm)
