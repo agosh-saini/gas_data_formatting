@@ -6,11 +6,13 @@ This repository provides scripts and tools to format and process gas sensing dat
 
 ## Repository Contents
 
-- `gas_data_formatting.py`: Main script for formatting gas data.
-- `json_db.py`: Script for handling JSON databases.
-- `main.py`: Entry point script for the project.
-- `.gitignore`: Specifies files to ignore in the repository.
-- `README.md`: This file.
+- `gas_data_formatting.py`: Script for formatting gas sensing data.
+- `split_relay_data.py`: Script for splitting relay data into individual files.
+- `json_db.py`: Script for managing JSON databases.
+- `main.py`: Entry point for the project.
+- `requirements.txt`: Lists the Python packages required for the project.
+- `example_data/`: Directory containing sample gas sensing data.
+
 
 ## Getting Started
 
@@ -29,8 +31,8 @@ pip install -r requirements.txt
 Clone the repository:
 
 ```bash
-git clone https://github.com/agosh-saini/gas_data_formatting.git
-cd gas_data_formatting
+git clone <repository url>
+cd <repository>
 ```
 ## Additional Information
 
