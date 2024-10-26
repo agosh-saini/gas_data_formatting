@@ -10,21 +10,21 @@ from os.path import basename
 import re
 
 class data_format:
-    def __init__(self, filepath, data, analytes, materials, sat_ppm) -> None:
+    def __init__(self, filepath, data, analytes, materials, sensor_type=None) -> None:
         self.filepath = filepath
         self.data = data # should be pandas df
         self.analytes = analytes # should be a set
         self.materials = materials # should be a set
         self.label = ["Pre", "On", "Off"]
-        self.sat_ppm = sat_ppm # should be a dictionary
         self.avg_timestep = None
         self.final_data = None
-        self.ppm = None
-        self.current_analyte = None
-        self.current_material = None
+        self.ppm = []
+        self.current_analyte = []
+        self.current_material = []
         self.baseline = None
+        self.sensor_type = sensor_type
     
-    def update_value(self, filepath=None, data=None, analytes=None, sat_ppm=None) -> None:
+    def update_value(self, filepath=None, data=None, analytes=None) -> None:
         # this function allows you to update the dataset without creating a new instance
         if filepath is not None:
             self.filepath = filepath
@@ -33,10 +33,7 @@ class data_format:
             self.data = data 
 
         if analytes is not None:
-            self.analytes = analytes
-            
-        if sat_ppm is not None:
-            self.sat_ppm = sat_ppm           
+            self.analytes = analytes          
         
     def extract_avg_timestep(self, data=None):
         # this function extracts the average timestep from the data
@@ -51,24 +48,24 @@ class data_format:
         return self.avg_timestep
 
     def extract_analyte(self, filepath=None, analytes=None):
-        # this function allows for extraction of analyte 
+        # This function allows for extraction of analytes
 
         if filepath is None: 
             filepath = self.filepath
 
         if analytes is None: 
             analytes = self.analytes
-    
-        # check to see if values are valid for gasses
-        if not any(analyte in filepath for analyte in analytes):
-            raise ValueError("None of the analytes are found in the filepath.")
 
-        # extract the analyte in question
-        for analyte in analytes:
-            if analyte in filepath:
-                self.current_analyte = analyte
-                return analyte  
+        # Check to see if any of the analytes are valid in the filepath
+        found_analytes = [analyte for analyte in analytes if analyte in filepath]
         
+        if not found_analytes:
+            raise ValueError("None of the analytes are found in the filepath.")
+        
+        # Append each found analyte to current_analyte in the order of appearance
+        self.current_analyte.extend(found_analytes)
+        return found_analytes
+            
     
     def extract_labeled_data(self, data=None):
         # this function extracts on and off cycling data and also the ppm associated
@@ -81,26 +78,27 @@ class data_format:
         return self.data
     
     def extract_material(self, filepath=None, materials=None):
-        # this function allows for extraction of material from filepath 
+        # This function allows for extraction of materials from filepath
 
         if filepath is None:
             filepath = self.filepath
 
         if materials is None:
             materials = self.materials
-    
-        # check to see if values are valid for gasses
-        if not any(material in filepath for material in materials):
+
+        # Check to see if any of the materials are valid in the filepath
+        found_materials = [material for material in materials if material in filepath]
+
+        if not found_materials:
             raise ValueError("None of the materials are found in the filepath.")
 
-        # extract the analyte in question
-        for material in materials:
-            if material in filepath:
-                self.current_material = material
-                return material  
+        # Append each found material to current_material in the order of appearance
+        self.current_material.extend(found_materials)
+        return found_materials
+
         
     def extract_ppm(self, filepath=None, ppm=None):
-        # this function allows for extraction of material from filepath 
+        # This function allows for extraction of material from filepath
 
         if filepath is None:
             filepath = self.filepath
@@ -108,14 +106,16 @@ class data_format:
         if ppm is None:
             ppm = self.ppm
 
-        # extract the analyte in question
-        match = re.search(r'(\d+)ppm', filepath)
-        if match:
-            self.ppm = match.group(1)
-            return match.group(1)
+        # Extract all ppm values in question
+        matches = re.findall(r'(\d+)ppm', filepath)
+        if matches:
+            # Convert matches to integers or keep as strings if desired
+            ppm_values = [int(match) for match in matches]
+            self.ppm = ppm_values
+            return ppm_values
         else:
-            raise ValueError("No ppm value found in the filepath.")   
-        
+            raise ValueError("No ppm value found in the filepath.")
+            
     def format_data(self, data=None):
         if data is None:
             data = self.data
@@ -143,6 +143,7 @@ class data_format:
             baseline = baseline_data["Resistance"].values.astype(float)
 
         # Create a DataFrame with repeating scalar values to match the length of on_data
+
         self.final_data = {
             'filename': filename,
             'Analyte': self.current_analyte,
@@ -153,6 +154,9 @@ class data_format:
             'OFF': off,
             'Baseline': baseline
         }
+
+        if self.sensor_type is not None:
+            self.final_data['Sensor Type'] = self.sensor_type
 
         return self.final_data
 
@@ -168,18 +172,15 @@ class data_format:
 
 ### MAIN ###
 if __name__ == "__main__":
-    sat_ppm = {
-                "data": 28483
-            }
                 
     analytes = set(["data", "Water", "EtOH", "Ace"])
 
-    materials = set(["log"])
+    materials = set(["log", "mat"])
 
-    filepath = "example_data\data_log_20241018_133756_25ppm.csv"
+    filepath = "example_data\data_water_log_mat_25ppm_50ppm.csv"
     data = pd.read_csv(filepath)
 
-    formatter = data_format(filepath, data, analytes, materials, sat_ppm)
+    formatter = data_format(filepath, data, analytes, materials)
 
     formatted_data = formatter.format()
 
