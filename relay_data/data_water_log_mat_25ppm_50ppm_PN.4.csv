@@ -1,0 +1,36 @@
+Time,Resistance,Cycle
+0.341,94565509.31,Pre-Cycle
+1.873,-12855621.85,Pre-Cycle
+3.393,-16066742.53,Pre-Cycle
+4.928,-11365603.39,Pre-Cycle
+6.501,13510457.23,Pre-Cycle
+8.012,11305757.31,Pre-Cycle
+9.549,16632437.11,Pre-Cycle
+11.125,11697178.76,Run-On Cycle (Repeat 1)
+12.984,13390462.4,Run-On Cycle (Repeat 1)
+14.518,81667053.22,Run-On Cycle (Repeat 1)
+16.033,-50721847.98,Run-On Cycle (Repeat 1)
+17.574,36774440.29,Run-On Cycle (Repeat 1)
+19.11,-107825326.0,Run-On Cycle (Repeat 1)
+20.604,11355751.86,Run-On Cycle (Repeat 1)
+22.153,-18559721.1,Off Cycle (Repeat 1)
+24.02,11291584.51,Off Cycle (Repeat 1)
+25.559,-13217482.98,Off Cycle (Repeat 1)
+27.087,13393825.21,Off Cycle (Repeat 1)
+28.625,-11684701.42,Off Cycle (Repeat 1)
+30.202,20617498.19,Off Cycle (Repeat 1)
+31.78,23788804.89,Off Cycle (Repeat 1)
+33.278,14139411.77,Run-On Cycle (Repeat 2)
+35.181,-11416098.53,Run-On Cycle (Repeat 2)
+36.716,-119971686.7,Run-On Cycle (Repeat 2)
+38.251,19643625.35,Run-On Cycle (Repeat 2)
+39.748,-16877711.19,Run-On Cycle (Repeat 2)
+41.3,-11976578.6,Run-On Cycle (Repeat 2)
+42.83,13372278.76,Run-On Cycle (Repeat 2)
+44.349,-11495543.81,Off Cycle (Repeat 2)
+46.197,13493297.27,Off Cycle (Repeat 2)
+47.726,11307664.71,Off Cycle (Repeat 2)
+49.295,86702521.05,Off Cycle (Repeat 2)
+50.817,-62368674.96,Off Cycle (Repeat 2)
+52.347,-14751007.42,Off Cycle (Repeat 2)
+53.881,-122363330.3,Off Cycle (Repeat 2)
