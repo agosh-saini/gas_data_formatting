@@ -41,7 +41,7 @@ class data_format:
             data = self.data
 
         # Extracting the average timestep from the data
-        time = data['Time'].values
+        time = np.array(data['Time'].values, dtype=float)
         time_diff = np.diff(time)
         self.avg_timestep = np.mean(time_diff)
 
@@ -60,7 +60,7 @@ class data_format:
         found_analytes = [analyte for analyte in analytes if analyte in filepath]
         
         if not found_analytes:
-            raise ValueError("None of the analytes are found in the filepath.")
+            raise ValueError(f"None of the analytes are found in the filepath. Found: {filepath}")
         
         # Append each found analyte to current_analyte in the order of appearance
         self.current_analyte.extend(found_analytes)
@@ -115,50 +115,52 @@ class data_format:
             return ppm_values
         else:
             raise ValueError("No ppm value found in the filepath.")
-            
+        
+
     def format_data(self, data=None):
         if data is None:
             data = self.data
 
-        # Creating DataFrame slices for 'ON' and 'OFF'
+        # Creating DataFrame slices for 'ON', 'OFF', and 'Baseline'
         on_data = data[data['Cycle'].str.contains('on', case=False, na=False)]
         off_data = data[data['Cycle'].str.contains('off', case=False, na=False)]
+
         baseline_data = data[data['Cycle'].str.contains('pre', case=False, na=False)]
 
-        filename = basename(self.filepath) 
+        final_data_array = []
 
-        if len(on_data["Resistance"].values.astype(float)) <= 0:
-            on = np.array([0])
-        else:
-            on = on_data["Resistance"].values.astype(float)
+        # Iterating over each concentration level (from `self.ppm`)
+        for i in range(len(self.ppm)):
 
-        if len(off_data["Resistance"].values.astype(float)) <= 0:
-            off = np.array([0])
-        else:
-            off = off_data["Resistance"].values.astype(float)
+            # Filter data specific to the concentration level `i + 1`
+            specific_on_data = on_data[on_data['Cycle'].str.contains(str(i + 1), case=False, na=False)]
+            specific_off_data = off_data[off_data['Cycle'].str.contains(str(i + 1), case=False, na=False)]
 
-        if len(baseline_data["Resistance"].values.astype(float)) <= 0:
-            baseline = np.array([0])
-        else:
-            baseline = baseline_data["Resistance"].values.astype(float)
+            date_format = re.findall(r'\d{8}', basename(self.filepath))[0]
 
-        # Create a DataFrame with repeating scalar values to match the length of on_data
+            # Construct dictionary for each concentration level with all values in arrays
+            entry = {
+                'from_file': basename(self.filepath),
+                'filename': f'{date_format}_{self.current_material}_{self.current_analyte[0]}_{self.ppm[i]}ppm_cycle{i + 1}',
+                'Analyte': self.current_analyte,
+                'Material': self.current_material,
+                'ppm': self.ppm[i],
+                'timestep': self.avg_timestep,
+                'ON': specific_on_data['Resistance'].values.astype(float),
+                'OFF': specific_off_data['Resistance'].values.astype(float),
+                'Baseline': baseline_data['Resistance'].values.astype(float)
+            }
 
-        self.final_data = {
-            'filename': filename,
-            'Analyte': self.current_analyte,
-            'Material': self.current_material,
-            'ppm': self.ppm,
-            'timestep': self.avg_timestep,
-            'ON': on,
-            'OFF': off,
-            'Baseline': baseline
-        }
+            if self.sensor_type is not None:
+                entry['Sensor Type'] = self.sensor_type
+                entry['filename'] = entry['filename'] + f'_{self.sensor_type}'
 
-        if self.sensor_type is not None:
-            self.final_data['Sensor Type'] = self.sensor_type
+            final_data_array.append(entry)
 
-        return self.final_data
+            self.final_data = final_data_array
+
+        return final_data_array
+
 
     def format(self):
         self.extract_analyte()
@@ -173,11 +175,11 @@ class data_format:
 ### MAIN ###
 if __name__ == "__main__":
                 
-    analytes = set(["data", "Water", "EtOH", "Ace"])
+    analytes = set(["H2"])
 
-    materials = set(["log", "mat"])
+    materials = set(["CuOxSnOx"])
 
-    filepath = "example_data\data_water_log_mat_25ppm_50ppm.csv"
+    filepath = "relay_data/20241105_PN1_CuOxSnOx_H2_1250ppm_2500ppm_3750ppm_1_PN1.2.csv"
     data = pd.read_csv(filepath)
 
     formatter = data_format(filepath, data, analytes, materials)

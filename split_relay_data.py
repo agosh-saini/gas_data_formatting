@@ -33,6 +33,7 @@ class SplitRelayData:
         This function takes input from the user for the sensor names.
         """
         sensor_names = []
+        print(f'File: {self.file_name}')
         sensor_name = input("Enter a base sensor material ID for the relays: ")
         
         for relay in self.relays:

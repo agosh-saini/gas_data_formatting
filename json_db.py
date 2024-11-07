@@ -25,6 +25,10 @@ class json_db:
         
         # Use the 'filename' attribute to create a unique filename
         filename_without_ext = re.sub(r'\.txt$', '', data_dict['filename'], flags=re.IGNORECASE)
+
+        if filename_without_ext in os.listdir(directory):
+            filename_without_ext = filename_without_ext + '_1'
+            
         json_filename = os.path.join(directory, filename_without_ext + '.json')
     
         # Convert numpy arrays to lists
