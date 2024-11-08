@@ -124,10 +124,12 @@ class data_format:
         # Creating DataFrame slices for 'ON', 'OFF', and 'Baseline'
         on_data = data[data['Cycle'].str.contains('on', case=False, na=False)]
         off_data = data[data['Cycle'].str.contains('off', case=False, na=False)]
-
         baseline_data = data[data['Cycle'].str.contains('pre', case=False, na=False)]
 
         final_data_array = []
+
+        # Minimum number of data points required for 10 seconds of data
+        min_data_points = int(10 / self.avg_timestep)
 
         # Iterating over each concentration level (from `self.ppm`)
         for i in range(len(self.ppm)):
@@ -136,29 +138,31 @@ class data_format:
             specific_on_data = on_data[on_data['Cycle'].str.contains(str(i + 1), case=False, na=False)]
             specific_off_data = off_data[off_data['Cycle'].str.contains(str(i + 1), case=False, na=False)]
 
-            date_format = re.findall(r'\d{8}', basename(self.filepath))[0]
+            # Check if each slice has at least 10 seconds of data
+            if len(specific_on_data) >= min_data_points and len(specific_off_data) >= min_data_points and len(baseline_data) >= min_data_points:
+                
+                date_format = re.findall(r'\d{8}', basename(self.filepath))[0]
 
-            # Construct dictionary for each concentration level with all values in arrays
-            entry = {
-                'from_file': basename(self.filepath),
-                'filename': f'{date_format}_{self.current_material}_{self.current_analyte[0]}_{self.ppm[i]}ppm_cycle{i + 1}',
-                'Analyte': self.current_analyte,
-                'Material': self.current_material,
-                'ppm': self.ppm[i],
-                'timestep': self.avg_timestep,
-                'ON': specific_on_data['Resistance'].values.astype(float),
-                'OFF': specific_off_data['Resistance'].values.astype(float),
-                'Baseline': baseline_data['Resistance'].values.astype(float)
-            }
+                # Construct dictionary for each concentration level with all values in arrays
+                entry = {
+                    'from_file': basename(self.filepath),
+                    'filename': f'{date_format}_{self.current_material}_{self.current_analyte[0]}_{self.ppm[i]}ppm_cycle{i + 1}',
+                    'Analyte': self.current_analyte,
+                    'Material': self.current_material,
+                    'ppm': self.ppm[i],
+                    'timestep': self.avg_timestep,
+                    'ON': specific_on_data['Resistance'].values.astype(float),
+                    'OFF': specific_off_data['Resistance'].values.astype(float),
+                    'Baseline': baseline_data['Resistance'].values.astype(float)
+                }
 
-            if self.sensor_type is not None:
-                entry['Sensor Type'] = self.sensor_type
-                entry['filename'] = entry['filename'] + f'_{self.sensor_type}'
+                if self.sensor_type is not None:
+                    entry['Sensor Type'] = self.sensor_type
+                    entry['filename'] = entry['filename'] + f'_{self.sensor_type}'
 
-            final_data_array.append(entry)
+                final_data_array.append(entry)
 
-            self.final_data = final_data_array
-
+        self.final_data = final_data_array
         return final_data_array
 
 
