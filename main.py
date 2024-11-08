@@ -32,7 +32,7 @@ def main(input_file=None):
 
     relay_current_files = set(os.listdir(output_folder))
 
-    analytes = set(["H2"])
+    analytes = set(["H2", 'dryair', "EtOH.Water"])
 
     materials = set(["CuOxSnOx"])
 
