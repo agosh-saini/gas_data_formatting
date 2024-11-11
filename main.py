@@ -9,6 +9,7 @@ import gas_data_formatting
 import split_relay_data
 import json_db
 import os
+import matplotlib.pyplot as plt
 from shutil import rmtree
 from time import time
 
@@ -38,7 +39,7 @@ def main(input_file=None):
 
     # Split relay data into multiple files
     spliter = split_relay_data.SplitRelayData(file_name, data)
-    spliter.generate_files()
+    spliter.generate_files(graph=True)
     sensor_name_base = spliter.sensor_names[0].split('.')[0]
 
     # Process and format the relay data
@@ -66,7 +67,7 @@ def main(input_file=None):
         for i in range(len(formatted_data)):
             json_file = db_json.save_summary_as_json(formatted_data[i], json_folder)
 
-        print(f'{file_name} JSON file saved at: {json_file}')
+        print(f'{file_name} JSON file saved at: {json_file}')        
     
     rmtree(output_folder)
 
@@ -79,7 +80,6 @@ if __name__ == '__main__':
         # Run the main function
         main()
     elif method == 'D':
-
 
         # Get list of files in directory
         folder = 'data'

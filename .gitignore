@@ -152,10 +152,7 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# Exclude the db and exe in 'database' folder
-not_in_use/database/*.db
-not_in_use/database/*.exe
-
 # Exclude data and json folder
 Data/*
 json_folder/*
+relay_graphs/*
