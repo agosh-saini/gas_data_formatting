@@ -1,31 +1,67 @@
-# ----
+############
 # Author: Agosh Saini
 # Contact: contact@agoshsaini.com   
-# -----
+############
 # This file is a class for data processing and formatting
+############
 
+###### IMPORTS ######
 import numpy as np
 import pandas as pd
-from os.path import basename
 import re
 
+from os.path import basename
+
+##### CLASS #####
+
 class data_format:
-    def __init__(self, filepath, data, analytes, materials, sensor_type=None) -> None:
+    
+    def __init__(self, filepath, data, analytes, materials, sensor_type=None):
+
+        '''
+        Constructor for the data_format class.
+
+        Parameters:
+            filepath (str): The path to the file containing the data.
+            data (DataFrame): The DataFrame containing the data.
+            analytes (set): The set of analytes to be extracted.
+            materials (set): The set of materials to be extracted.
+            sensor_type (str): The type of sensor used (optional).
+        '''
+
+        # Initialize the class variables
         self.filepath = filepath
-        self.data = data # should be pandas df
-        self.analytes = analytes # should be a set
-        self.materials = materials # should be a set
+
+        self.data = data 
+
+        self.analytes = analytes 
+        self.materials = materials 
         self.label = ["Pre", "On", "Off"]
+        self.sensor_type = sensor_type
+        
+        # Initialize the following variables to None
         self.avg_timestep = None
         self.final_data = None
+
         self.ppm = []
+
         self.current_analyte = []
         self.current_material = []
+
         self.baseline = None
-        self.sensor_type = sensor_type
+
     
-    def update_value(self, filepath=None, data=None, analytes=None) -> None:
-        # this function allows you to update the dataset without creating a new instance
+    def update_value(self, filepath=None, data=None, analytes=None):
+
+        """
+        This function allows for updating the values of the class variables.
+
+        Parameters:
+            filepath (str): The path to the file containing the data.
+            data (DataFrame): The DataFrame containing the data.
+            analytes (set): The set of analytes to be extracted.
+        """
+        
         if filepath is not None:
             self.filepath = filepath
 
@@ -35,8 +71,14 @@ class data_format:
         if analytes is not None:
             self.analytes = analytes          
         
+
     def extract_avg_timestep(self, data=None):
-        # this function extracts the average timestep from the data
+        '''
+        This function extracts the average timestep from the data.
+
+        Parameters:
+            data (DataFrame): The DataFrame containing the data.
+        '''
         if data is None:
             data = self.data
 
@@ -48,7 +90,14 @@ class data_format:
         return self.avg_timestep
 
     def extract_analyte(self, filepath=None, analytes=None):
-        # This function allows for extraction of analytes
+        
+        '''
+        This function allows for extraction of analytes from filepath.
+
+        Parameters:
+            filepath (str): The path to the file containing the data.
+            analytes (set): The set of analytes to be extracted.
+        '''
 
         if filepath is None: 
             filepath = self.filepath
@@ -64,11 +113,19 @@ class data_format:
         
         # Append each found analyte to current_analyte in the order of appearance
         self.current_analyte.extend(found_analytes)
+
         return found_analytes
             
     
     def extract_labeled_data(self, data=None):
-        # this function extracts on and off cycling data and also the ppm associated
+
+        '''
+        This function extracts the labeled data from the DataFrame.
+
+        Parameters:
+            data (DataFrame): The DataFrame containing the data
+        '''
+
         if data is None:
             data = self.data
 
@@ -78,7 +135,14 @@ class data_format:
         return self.data
     
     def extract_material(self, filepath=None, materials=None):
-        # This function allows for extraction of materials from filepath
+
+        '''
+        This function allows for extraction of materials from filepath.
+
+        Parameters:
+            filepath (str): The path to the file containing the data.
+            materials (set): The set of materials to be extracted.
+        '''
 
         if filepath is None:
             filepath = self.filepath
@@ -98,7 +162,14 @@ class data_format:
 
         
     def extract_ppm(self, filepath=None, ppm=None):
-        # This function allows for extraction of material from filepath
+
+        '''
+        This function allows for extraction of ppm values from filepath.
+
+        Parameters:
+            filepath (str): The path to the file containing the data.
+            ppm (list): The list of ppm values to be
+        '''
 
         if filepath is None:
             filepath = self.filepath
@@ -108,28 +179,44 @@ class data_format:
 
         # Extract all ppm values in question
         matches = re.findall(r'(\d+)ppm', filepath)
+
         if matches:
             # Convert matches to integers or keep as strings if desired
             ppm_values = [int(match) for match in matches]
             self.ppm = ppm_values
+
             return ppm_values
+        
         else:
             raise ValueError("No ppm value found in the filepath.")
         
 
     def format_data(self, data=None):
+
+        '''
+        This function formats the data into a dictionary.
+
+        Parameters:
+            data (DataFrame): The DataFrame containing the data
+        '''
+
         if data is None:
             data = self.data
 
         # Creating DataFrame slices for 'ON', 'OFF', and 'Baseline'
+
         on_data = data[data['Cycle'].str.contains('on', case=False, na=False)]
         off_data = data[data['Cycle'].str.contains('off', case=False, na=False)]
+
+        ''' Removing the 'pre' data from the 'ON' and 'OFF' data slices ''' 
+        '''
         baseline_data = data[data['Cycle'].str.contains('pre', case=False, na=False)]
+        '''
 
         final_data_array = []
 
-        # Minimum number of data points required for 10 seconds of data
-        min_data_points = int(10 / self.avg_timestep)
+        # Minimum number of data points required for 5 seconds of data
+        min_data_points = int(5 / self.avg_timestep)
 
         # Iterating over each concentration level (from `self.ppm`)
         for i in range(len(self.ppm)):
@@ -139,7 +226,7 @@ class data_format:
             specific_off_data = off_data[off_data['Cycle'].str.contains(str(i + 1), case=False, na=False)]
 
             # Check if each slice has at least 10 seconds of data
-            if len(specific_on_data) >= min_data_points and len(specific_off_data) >= min_data_points and len(baseline_data) >= min_data_points:
+            if len(specific_on_data) >= min_data_points and len(specific_off_data) >= min_data_points:
                 
                 date_format = re.findall(r'\d{8}', basename(self.filepath))[0]
 
@@ -148,14 +235,17 @@ class data_format:
                     'from_file': basename(self.filepath),
                     'filename': f'{date_format}_{self.current_material}_{self.current_analyte[0]}_{self.ppm[i]}ppm_cycle{i + 1}',
                     'Analyte': self.current_analyte,
+                    'Sensor Type': None,
+                    'RC_on': None,
+                    'RC_off': None,
                     'Material': self.current_material,
                     'ppm': self.ppm[i],
                     'timestep': self.avg_timestep,
                     'ON': specific_on_data['Resistance'].values.astype(float),
                     'OFF': specific_off_data['Resistance'].values.astype(float),
-                    'Baseline': baseline_data['Resistance'].values.astype(float)
                 }
 
+                # Append the entry to the final data array
                 if self.sensor_type is not None:
                     entry['Sensor Type'] = self.sensor_type
                     entry['filename'] = entry['filename'] + f'_{self.sensor_type}'
@@ -163,10 +253,16 @@ class data_format:
                 final_data_array.append(entry)
 
         self.final_data = final_data_array
+
         return final_data_array
 
-
     def format(self):
+        '''
+        This function formats the data into a dictionary.
+
+        Returns:
+            final_data (list): The list of dictionaries containing the formatted data.
+        '''
         self.extract_analyte()
         self.extract_avg_timestep()
         self.extract_material()
@@ -176,7 +272,7 @@ class data_format:
 
         return self.final_data
 
-### MAIN ###
+##### MAIN ######
 if __name__ == "__main__":
                 
     analytes = set(["H2"])

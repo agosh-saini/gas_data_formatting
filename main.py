@@ -1,91 +1,195 @@
-# ----
-# Author: Agosh Saini
+#######
+#  Author: Agosh Saini
 # Contact: contact@agoshsaini.com   
-# -----
+#######
 # This file is a class for data processing and formatting 
+#######
 
+
+###### IMPORTS ######
 import pandas as pd
 import gas_data_formatting 
 import split_relay_data
 import json_db
 import os
-import matplotlib.pyplot as plt
+import time 
+import re
+
 from shutil import rmtree
-from time import time
+from repeat_splitter import cycle_data_formatter
 
-def main(input_file=None):
 
-    if input_file is None:
-        input_file = input('Enter the path to the input file containing relay data: ')
+###### FUNCTIONS ######
 
-    data = pd.read_csv(input_file)
+def clear_folder(folder):
+    """
+    Safely clears all contents of a folder.
 
-    file_name = os.path.splitext(os.path.basename(input_file))[0]
+    Parameters:
+        folder (str): Path to the folder to clear.
+    """
 
-    output_folder = os.curdir + '/relay_data'
-    json_folder = os.curdir + '/json_folder'
+    # Check if the folder exists, and clear it if it does
+    if os.path.exists(folder):
 
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-    
+        # Iterate through all files and subdirectories in the folder
+        for filename in os.listdir(folder):
+            file_path = os.path.join(folder, filename)
+
+            # Attempt to remove the file or directory
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)  # Remove the file or link
+
+                elif os.path.isdir(file_path):
+                    rmtree(file_path)  # Remove the directory
+
+            except Exception as e:
+                print(f'Failed to delete {file_path}. Reason: {e}')
+                
+    else:
+        os.makedirs(folder)  # Create the folder if it does not exist
+
+def main(input_file=None, data=None):
+    """
+    Main function for processing and formatting relay data.
+
+    Parameters:
+        input_file (str): Path to the input file containing relay data (optional if data is provided).
+        data (DataFrame): DataFrame containing relay data (optional if input_file is provided).
+    """
+
+    # Define folders for output
+    output_folder = os.path.join(os.curdir, 'relay_data')
+    repeat_output_folder = os.path.join(os.curdir, 'repeat_data')
+    json_folder = os.path.join(os.curdir, 'json_folder')
+
+    # Ensure necessary output directories exist, but do not clear json_folder to preserve JSON files
+
+    for folder in [output_folder, repeat_output_folder]:
+        clear_folder(folder)
+
     if not os.path.exists(json_folder):
         os.makedirs(json_folder)
 
-    relay_current_files = set(os.listdir(output_folder))
+    # Set up cycle_data_formatter for splitting data into repeats
+    if data is None:
 
-    analytes = set(["H2", 'dryair', "EtOH.Water"])
+        if input_file is None:
+            input_file = input('Enter the path to the input file containing relay data: ')
 
-    materials = set(["CuOxSnOx"])
+        formatter = cycle_data_formatter(filepath=input_file, output_dir=repeat_output_folder)
 
-    # Split relay data into multiple files
-    spliter = split_relay_data.SplitRelayData(file_name, data)
-    spliter.generate_files(graph=True)
-    sensor_name_base = spliter.sensor_names[0].split('.')[0]
+    else:
+        formatter = cycle_data_formatter(filepath="provided_data", data=data, output_dir=repeat_output_folder)
 
-    # Process and format the relay data
-    for i, file in enumerate(os.listdir(output_folder)):
+    ####### Split the input data into repeats and save each repeat as a separate file #######
+    formatter.run()
 
-        if file in relay_current_files:
+    ########## Process and format relay data for each repeat ##########
+
+    analytes = {"H2", "dryair", "EtOH.Water"}
+    materials = {"CuOxSnOx"}
+
+    db_json = json_db.json_db()
+
+    for repeat_file in os.listdir(repeat_output_folder):
+
+        repeat_file_path = os.path.join(repeat_output_folder, repeat_file)
+
+        if not repeat_file_path.endswith('.csv'):
             continue
 
-        # Skip the file if it is not a CSV file
-        filepath = os.path.join(output_folder, file)
-        data = pd.read_csv(filepath)
-        
-        # Skip the file if it is not a CSV file
-        if not filepath.endswith('.csv'):
-            continue
+        # Print the repeat file to confirm it's being processed
+        print(f"Processing repeat file: {repeat_file}")
 
-        # Format the data
-        formatter = gas_data_formatting.data_format(filepath, data, analytes, materials, sensor_type=f"{sensor_name_base}.{i+1}")   
-        formatted_data = formatter.format()
+        repeat_data = pd.read_csv(repeat_file_path)
 
-        for i in range(len(formatted_data)):
-            formatted_data[i]['filename'] = f"{formatted_data[i]['filename']}_{int(time())}"
+        # Extract base filename for clarity
+        file_name = os.path.splitext(repeat_file)[0]
+        file_name = file_name[9:]  # Adjust if necessary for naming consistency
 
-        # Save the formatted data as a JSON file
-        for i in range(len(formatted_data)):
-            json_file = db_json.save_summary_as_json(formatted_data[i], json_folder)
+        # Initialize SplitRelayData to split relay data for the current repeat file
+        spliter = split_relay_data.SplitRelayData(file_name, repeat_data)
+        spliter.generate_files(graph=True)
 
-        print(f'{file_name} JSON file saved at: {json_file}')        
-    
-    rmtree(output_folder)
+        # **Step 3: Format relay data and save to JSON immediately after generating graphs**
+        for relay_file in os.listdir(output_folder):
+
+            relay_file_path = os.path.join(output_folder, relay_file)
+
+            if not relay_file.endswith('.csv'):
+                continue
+
+            # Make sure we are only processing files related to the current repeat
+            if not relay_file.startswith(file_name):
+                continue
+
+            relay_data = pd.read_csv(relay_file_path)
+
+            if relay_data.empty:
+                print(f"Skipping empty relay data for file: {relay_file_path}")
+                continue
+
+            # Base name extraction
+            relay_base_name = os.path.splitext(os.path.basename(relay_file_path))[0]
+
+            # Deduce sensor name base (PN sensor label) and use repeat information from file_name
+            sensor_name_base = re.findall(r'PN\d+\.\d+', relay_base_name)[0]
+
+            # Generate the unique JSON filename using the PN sensor label, repeat, and timestamp
+            timestamp = int(time.time())
+            json_filename_base = f"{relay_base_name}_{timestamp}"
+
+            # Process and format the relay data using gas_data_formatting
+            formatter = gas_data_formatting.data_format(
+                filepath=relay_file_path, 
+                data=relay_data, 
+                analytes=analytes, 
+                materials=materials, 
+                sensor_type=sensor_name_base
+            )
+
+            formatted_data = formatter.format()
+
+            # Save formatted data as JSON
+            for entry in formatted_data:
+                entry['filename'] = json_filename_base  # Set the entry's filename to match the JSON file
+
+                # Prepare the base path for the JSON file
+                json_file_path = os.path.join(json_folder, f"{json_filename_base}.json")
+
+                # Check if file already exists, if it does, append a counter to ensure uniqueness
+                counter = 1
+                
+                while os.path.exists(json_file_path):
+                    json_file_path = os.path.join(json_folder, f"{json_filename_base}_{counter}.json")
+                    counter += 1
+
+                try:
+                    # Save the summary as JSON using the updated unique filename
+                    db_json.save_summary_as_json(entry, json_folder)
+                    print(f'JSON file saved at: {json_file_path}')
+                except Exception as e:
+                    print(f"Error saving JSON for file {json_filename_base}: {e}")
+
+    # Final cleanup of temporary folders after processing the current input file
+    clear_folder(repeat_output_folder)
+    clear_folder(output_folder)
+
 
 if __name__ == '__main__':
-    db_json = json_db.json_db()   
+    db_json = json_db.json_db()
 
     method = input('Enter the method of data processing (F - File, D - Directory): ')
 
     if method == 'F':
-        # Run the main function
+        # Run the main function with a single file input
         main()
     elif method == 'D':
-
-        # Get list of files in directory
+        # Process all files in a specified directory
         folder = 'data'
         files = os.listdir(folder)
-
         for file in files:
-            # Run the main functionPN1
+            print(f'Processing file: {file}')
             main(os.path.join(folder, file))
-
