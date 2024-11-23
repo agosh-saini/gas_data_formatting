@@ -218,12 +218,18 @@ class data_format:
         # Minimum number of data points required for 5 seconds of data
         min_data_points = int(5 / self.avg_timestep)
 
+        # Extact reps
+        reps = set([re.findall(r'\d+', cycle)[0] for cycle in data['Cycle'] if re.findall(r'\d+', cycle)])
+
+
         # Iterating over each concentration level (from `self.ppm`)
         for i in range(len(self.ppm)):
 
+            specific_on_data = on_data[on_data['Cycle'].str.contains('on', case=False, na=False)]
+            specific_off_data = off_data[off_data['Cycle'].str.contains('off', case=False, na=False)]
             # Filter data specific to the concentration level `i + 1`
-            specific_on_data = on_data[on_data['Cycle'].str.contains(str(i + 1), case=False, na=False)]
-            specific_off_data = off_data[off_data['Cycle'].str.contains(str(i + 1), case=False, na=False)]
+            #specific_on_data = on_data[on_data['Cycle'].str.contains(str(i + 1), case=False, na=False)]
+            #specific_off_data = off_data[off_data['Cycle'].str.contains(str(i + 1), case=False, na=False)]
 
             # Check if each slice has at least 10 seconds of data
             if len(specific_on_data) >= min_data_points and len(specific_off_data) >= min_data_points:

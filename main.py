@@ -88,7 +88,7 @@ def main(input_file=None, data=None):
 
     ########## Process and format relay data for each repeat ##########
 
-    analytes = {"H2", "dryair", "EtOH.Water"}
+    analytes = {"EtOH"}
     materials = {"CuOxSnOx"}
 
     db_json = json_db.json_db()
@@ -154,7 +154,8 @@ def main(input_file=None, data=None):
 
             # Save formatted data as JSON
             for entry in formatted_data:
-                entry['filename'] = json_filename_base  # Set the entry's filename to match the JSON file
+                # Set file name to json file name
+                entry['filename'] = json_filename_base
 
                 # Prepare the base path for the JSON file
                 json_file_path = os.path.join(json_folder, f"{json_filename_base}.json")
@@ -193,3 +194,7 @@ if __name__ == '__main__':
         for file in files:
             print(f'Processing file: {file}')
             main(os.path.join(folder, file))
+
+        # Remove temp forlders
+        os.rmdir('relay_data')
+        os.rmdir('repeat_data')
