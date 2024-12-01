@@ -16,7 +16,7 @@ from os.path import basename
 
 class data_format:
     
-    def __init__(self, filepath, data, analytes, materials, sensor_type=None):
+    def __init__(self, filepath, data, analytes, materials, ppm=None, sensor_type=None):
 
         '''
         Constructor for the data_format class.
@@ -49,6 +49,8 @@ class data_format:
         self.current_material = []
 
         self.baseline = None
+
+        self.ppm = ppm
 
     
     def update_value(self, filepath=None, data=None, analytes=None):
@@ -174,21 +176,21 @@ class data_format:
         if filepath is None:
             filepath = self.filepath
 
-        if ppm is None:
-            ppm = self.ppm
+        if self.ppm is None:
 
-        # Extract all ppm values in question
-        matches = re.findall(r'(\d+)ppm', filepath)
+            # Extract all ppm values in question
+            matches = re.findall(r'(\d+)ppm', filepath)
 
-        if matches:
-            # Convert matches to integers or keep as strings if desired
-            ppm_values = [int(match) for match in matches]
-            self.ppm = ppm_values
+            if matches:
+                # Convert matches to integers or keep as strings if desired
+                ppm_values = [int(match) for match in matches]
+                self.ppm = ppm_values
 
-            return ppm_values
+                return ppm_values
+            
+            else:
+                raise ValueError("No ppm value found in the filepath.")
         
-        else:
-            raise ValueError("No ppm value found in the filepath.")
         
 
     def format_data(self, data=None):
@@ -222,14 +224,10 @@ class data_format:
         reps = set([re.findall(r'\d+', cycle)[0] for cycle in data['Cycle'] if re.findall(r'\d+', cycle)])
 
 
-        # Iterating over each concentration level (from `self.ppm`)
         for i in range(len(self.ppm)):
 
             specific_on_data = on_data[on_data['Cycle'].str.contains('on', case=False, na=False)]
             specific_off_data = off_data[off_data['Cycle'].str.contains('off', case=False, na=False)]
-            # Filter data specific to the concentration level `i + 1`
-            #specific_on_data = on_data[on_data['Cycle'].str.contains(str(i + 1), case=False, na=False)]
-            #specific_off_data = off_data[off_data['Cycle'].str.contains(str(i + 1), case=False, na=False)]
 
             # Check if each slice has at least 10 seconds of data
             if len(specific_on_data) >= min_data_points and len(specific_off_data) >= min_data_points:
