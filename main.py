@@ -88,7 +88,7 @@ def main(input_file=None, data=None, rep_method='R'):
 
     ########## Process and format relay data for each repeat ##########
 
-    analytes = {"Ace"}
+    analytes = {"EtOH", "IPA"}
     materials = {"CuOxSnOx"}
 
     db_json = json_db.json_db()
@@ -152,10 +152,6 @@ def main(input_file=None, data=None, rep_method='R'):
                 )
 
                 formatted_data = formatter.format()
-
-                for entry in formatted_data:
-                    print(entry['ON'])
-
                 
                 # Save formatted data as JSON
                 for entry in formatted_data:

@@ -7,7 +7,6 @@
 
 ######## IMPORTS ########
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import tkinter as tk
 from tkinter import filedialog
@@ -65,6 +64,7 @@ plt.show()
 
 # Ask the user to select which sensors to discard
 discard_sensors = input("Enter the Relay Numbers to discard separated by commas: ")
+
 discard_sensors = discard_sensors.split(',')
 
 # Create Columns Titles From Numbers
