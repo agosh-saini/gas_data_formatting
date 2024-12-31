@@ -88,7 +88,7 @@ def main(input_file=None, data=None, rep_method='R'):
 
     ########## Process and format relay data for each repeat ##########
 
-    analytes = {"EtOH", "IPA"}
+    analytes = {"EtOH", "IPA", "Ace"}
     materials = {"CuOxSnOx"}
 
     db_json = json_db.json_db()
